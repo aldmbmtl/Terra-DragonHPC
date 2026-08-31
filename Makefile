@@ -155,31 +155,3 @@ check-size:
 	elif [ "$$size" -ge "$$warn" ]; then \
 	  echo "  [WARN]  $(ARGS): packaged scripts are within 10%% of the 1MiB limit. Consider trimming scripts/."; \
 	fi
-
-# Watch a plugin's scripts/ directory and auto-repackage on changes.
-# Useful during active workload template development.
-# Requires inotify-tools (available in devbox shell).
-# Usage: make watch <plugin-name>
-watch:
-	@./hack/watch.sh $(ARGS)
-
-# documentation
-docs:
-	.venv/bin/mkdocs serve
-
-deploy-docs: .venv/bin/activate
-	. .venv/bin/activate; mkdocs gh-deploy --force
-
-lint-docs: .venv/bin/activate
-	@echo " >> skipping lint << "
-
-# when using devbox, this will already exist and not trigger
-# It's used by the CI, where devbox hook behavior is different
-.venv/bin/activate:
-	python3 -m venv .venv
-	.venv/bin/pip install -r requirements.txt
-# env
-cluster:
-	@which kind || (echo "kind is not in PATH - did you install devbox and run 'devbox shell'?" && exit 1)
-	@kind create cluster --name terra-plugins --config .kind.yaml || echo "Cluster already exists..."
-
