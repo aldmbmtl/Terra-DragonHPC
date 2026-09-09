@@ -1,0 +1,114 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-backend
+  labels:
+    app: {{ .Release.Name }}-backend
+data:
+  {{ printf "backend_pod_%s-frontend.yml" .Release.Name | quote }}: |
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: {{ .Release.Name }}-backend
+      labels:
+        app: {{ .Release.Name }}-backend
+      ownerReferences:
+      - apiVersion: batch/v1
+        controller: true
+        kind: Job
+        name: {{ .Release.Name }}-frontend
+        uid: {{ "{{parentDeployment.metadata.uid}}" | quote }}
+    spec:
+      ttlSecondsAfterFinished: 300
+      completions: {{ .Values.nnodes }}
+      parallelism: {{ .Values.nnodes }}
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: {{ .Release.Name }}-backend
+          annotations:
+            juno-innovations.com/workload: "Terminal"
+        spec:
+          restartPolicy: Never
+          serviceAccountName: {{ .Release.Name }}-backend
+          {{- if .Values.gpu }}
+          runtimeClassName: nvidia
+          {{- end }}
+          {{- if .Values.pullSecret }}
+          imagePullSecrets:
+            - name: "{{ .Values.pullSecret }}"
+          {{- end }}
+          containers:
+            - name: backend
+              image: "{{ .Values.registry }}/{{ .Values.repo }}:{{ .Values.tag }}"
+              resources:
+                requests:
+                  memory: "{{ .Values.memory }}"
+                  cpu: "{{ .Values.cpu }}"
+                {{- if or .Values.gpu .Values.memoryLimit .Values.cpuLimit }}
+                limits:
+                {{- if .Values.gpu }}
+                  nvidia.com/gpu: "1"
+                {{- end }}
+                {{- if .Values.cpuLimit }}
+                  cpu: "{{ .Values.cpuLimit }}"
+                {{- end }}
+                {{- if .Values.memoryLimit }}
+                  memory: "{{ .Values.memoryLimit }}"
+                {{- end }}
+                {{- end }}
+              env:
+                - name: BACKEND_OVERLAY_PORT
+                  value: "8081"
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: POD_IP
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: status.podIP
+                - name: POD_UID
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.uid
+                - name: BACKEND_JOB_LABEL
+                  value: {{ .Release.Name }}-backend
+                - name: DRAGON_LOG_DEVICE_ACTOR_FILE
+                  value: {{ "{{temp_log_value}}" | quote }}
+                - name: DRAGON_TELEMETRY_LEVEL
+                  value: {{ "{{temp_telemetry_level}}" | quote }}
+                - name: DRAGON_OVERLAY_TRANSPORT
+                  value: {{ "{{temp_overlay_transport}}" | quote }}
+                - name: DRAGON_FE_SDESC
+                  value: {{ "{{temp_fe_sdesc}}" | quote }}
+                - name: FE_LABEL_SELECTOR
+                  value: {{ "{{temp_fe_label}}" | quote }}
+                - name: {{ "{{DRAGON_FE_GW}}" | quote }}
+                  value: {{ "{{temp_fe_gw}}" | quote }}
+              command: ["/bin/bash", "/tmp/launch_script/backend.sh"]
+              volumeMounts:
+                - name: shm
+                  mountPath: /dev/shm
+                - name: launch-script-config
+                  mountPath: /tmp/launch_script
+                {{- if .Values.volumeMounts }}
+                {{- toYaml .Values.volumeMounts | nindent 16 }}
+                {{- end }}
+          volumes:
+            - name: shm
+              emptyDir:
+                medium: Memory
+                sizeLimit: {{ .Values.shm_size }}
+            - name: launch-script-config
+              configMap:
+                name: {{ .Release.Name }}-launch-script
+                defaultMode: 0755
+            {{- if .Values.volumes }}
+            {{- toYaml .Values.volumes | nindent 12 }}
+            {{- end }}

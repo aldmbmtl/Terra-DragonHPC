@@ -1,0 +1,30 @@
+# Kuiper-injected standard values — do not remove
+name: my-template
+user:
+group:
+cpu: "1"
+memory: "1Gi"
+cpuLimit: null
+memoryLimit: null
+idx: 0
+guid: 0
+puid: 0
+host:
+pullSecret:
+session:
+volumeMounts: []
+volumes: []
+env:
+  - name: JUNO
+    value: "true"
+selector:
+plugins: []
+_kuiper:
+
+# DragonHPC defaults — names MUST match metadata.yaml field names
+registry: docker.io
+repo: python
+tag: 3.11-slim
+nnodes: 1
+gpu: false
+shm_size: 10Gi

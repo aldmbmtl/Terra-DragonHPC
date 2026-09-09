@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-launch-script
+  labels:
+    app: {{ .Release.Name }}-dragon
+data:
+  launch.sh: |
+    #!/bin/bash
+    set -e
+
+    # Entrypoint is required — fail if not set
+    if [ -z "${DRAGON_ENTRYPOINT}" ]; then
+        echo "ERROR: DRAGON_ENTRYPOINT environment variable is required but not set."
+        echo "Set it to the Python module/script to launch with dragon."
+        exit 1
+    fi
+
+    WORKDIR="${DRAGON_WORKING_DIR:-/workspace}"
+    mkdir -p "${WORKDIR}"
+    cd "${WORKDIR}"
+
+    if [ -n "${DRAGON_GIT_URL}" ]; then
+        echo "Cloning ${DRAGON_GIT_URL}"
+        git clone "${DRAGON_GIT_URL}" .
+    fi
+
+    if [ -n "${DRAGON_REQUIREMENTS}" ]; then
+        echo "Installing requirements from ${DRAGON_REQUIREMENTS}"
+        python3 -m pip install -r "${DRAGON_REQUIREMENTS}"
+    fi
+
+    exec dragon "${DRAGON_ENTRYPOINT}"
+
+  backend.sh: |
+    #!/bin/bash
+    set -e
+
+    python3 -m pip install dragonhpc
+    exec dragon-backend

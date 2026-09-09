@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-terra-metadata"
+  labels:
+    # This label tells Genesis to include this plugin in the workload template catalog.
+    # The value must point to the scripts ConfigMap for this release.
+    kuiper.juno-innovations.com/chart: "{{ .Release.Name }}-scripts-configmap"
+  annotations:
+    # Categorizes this workload in the Genesis UI workload table.
+    # Valid values: Application | Terminal | Workspace | Server | Virtual Machine
+    juno-innovations.com/workload: "Terminal"
+data:
+  # Must point to the scripts ConfigMap — Genesis reads packaged_scripts.base64 from it.
+  chart: "{{ .Release.Name }}-scripts-configmap"
+  description: "DragonHPC Python multiprocessing batch workload"
+  # The fields schema drives the Genesis workload-creation UI.
+  # Every field here becomes a Helm value passed into scripts/chart/ by Kuiper at launch time.
+  fields: |
+    - name: registry
+      description: "Container registry"
+      type: string
+      required: true
+      default: "docker.io"
+    - name: repo
+      description: "Image repository"
+      type: string
+      required: true
+      default: "python"
+    - name: tag
+      description: "Image tag"
+      type: string
+      required: true
+      default: "3.11-slim"
+    - name: nnodes
+      description: "Number of backend Dragon compute nodes"
+      type: int
+      required: true
+      default: 1
+    - name: gpu
+      description: "Attach a GPU to this workload"
+      type: boolean
+      required: true
+      default: false
+    - name: cpu
+      description: "CPU cores (request)"
+      type: string
+      required: false
+      default: "1"
+    - name: memory
+      description: "Memory request"
+      type: string
+      required: false
+      default: "1Gi"
+    - name: cpuLimit
+      description: "CPU limit (empty = no limit)"
+      type: string
+      required: false
+      default: ""
+    - name: memoryLimit
+      description: "Memory limit (empty = no limit)"
+      type: string
+      required: false
+      default: ""
+  env_hints: |
+    - name: DRAGON_WORKING_DIR
+      description: "Working directory for the launch script"
+    - name: DRAGON_GIT_URL
+      description: "Optional git repo to clone into working dir"
+    - name: DRAGON_REQUIREMENTS
+      description: "Path to requirements.txt to install before run"
+    - name: DRAGON_ENTRYPOINT
+      description: "Python module/script to launch with dragon"

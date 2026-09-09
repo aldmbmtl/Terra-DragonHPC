@@ -1,0 +1,99 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-frontend
+  annotations:
+    juno-innovations.com/workload: "Terminal"
+spec:
+  ttlSecondsAfterFinished: 300
+  completions: 1
+  parallelism: 1
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-frontend
+      annotations:
+        juno-innovations.com/workload: "Terminal"
+    spec:
+      restartPolicy: Never
+      {{- if .Values.pullSecret }}
+      imagePullSecrets:
+        - name: "{{ .Values.pullSecret }}"
+      {{- end }}
+      serviceAccountName: {{ .Release.Name }}-frontend
+      containers:
+        - name: frontend
+          image: "{{ .Values.registry }}/{{ .Values.repo }}:{{ .Values.tag }}"
+          resources:
+            requests:
+              memory: "{{ .Values.memory }}"
+              cpu: "{{ .Values.cpu }}"
+            {{- if or .Values.memoryLimit .Values.cpuLimit }}
+            limits:
+            {{- if .Values.cpuLimit }}
+              cpu: "{{ .Values.cpuLimit }}"
+            {{- end }}
+            {{- if .Values.memoryLimit }}
+              memory: "{{ .Values.memoryLimit }}"
+            {{- end }}
+            {{- end }}
+          env:
+            - name: USER
+              value: "{{ .Values.user }}"
+            - name: HOME
+              value: "/home/{{ .Values.user }}"
+            - name: UID
+              value: "{{ .Values.puid }}"
+            - name: GID
+              value: "{{ .Values.guid }}"
+            - name: FRONTEND_PORT
+              value: "8080"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            - name: FRONTEND_JOB_LABEL
+              value: {{ .Release.Name }}-frontend
+            {{- range .Values.env }}
+            - name: {{ .name | quote }}
+              value: {{ .value | quote }}
+            {{- end }}
+          command: ["/bin/bash", "/tmp/launch_script/launch.sh"]
+          volumeMounts:
+            - name: shm
+              mountPath: /dev/shm
+            - name: launch-script-config
+              mountPath: /tmp/launch_script
+            - name: backend-job
+              mountPath: /config
+            {{- if .Values.volumeMounts }}
+            {{- toYaml .Values.volumeMounts | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: {{ .Values.shm_size }}
+        - name: launch-script-config
+          configMap:
+            name: {{ .Release.Name }}-launch-script
+            defaultMode: 0755
+        - name: backend-job
+          configMap:
+            name: {{ .Release.Name }}-backend
+        {{- if .Values.volumes }}
+        {{- toYaml .Values.volumes | nindent 8 }}
+        {{- end }}
