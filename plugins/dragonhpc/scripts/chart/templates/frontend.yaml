@@ -71,6 +71,9 @@ spec:
             - name: {{ .name | quote }}
               value: {{ .value | quote }}
             {{- end }}
+          ports:
+            - containerPort: 8080
+              name: http
           command: ["/bin/bash", "/tmp/launch_script/launch.sh"]
           volumeMounts:
             - name: shm
