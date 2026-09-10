@@ -13,6 +13,11 @@ data:
     # startup and dies without them (upstream deploy/kubernetes/Dockerfile parity).
     apt-get update && apt-get install -y --no-install-recommends libnuma1 libibverbs1 librdmacm1 pciutils && rm -rf /var/lib/apt/lists/*
 
+    # Dragon's native loggers default to NONE — the failing TA/LS child dies
+    # silently; route launcher+native logs to stderr.
+    export PYTHONUNBUFFERED=1
+    export DRAGON_LOG_DEVICE_STDERR=DEBUG
+
     # Entrypoint is required — fail if not set
     if [ -z "${DRAGON_ENTRYPOINT}" ]; then
         echo "ERROR: DRAGON_ENTRYPOINT environment variable is required but not set."
@@ -50,6 +55,11 @@ data:
     # Dragon's native TCP transport agent probes NUMA/verbs/PCI devices at
     # startup and dies without them (upstream deploy/kubernetes/Dockerfile parity).
     apt-get update && apt-get install -y --no-install-recommends libnuma1 libibverbs1 librdmacm1 pciutils && rm -rf /var/lib/apt/lists/*
+
+    # Dragon's native loggers default to NONE — the failing TA/LS child dies
+    # silently; route launcher+native logs to stderr.
+    export PYTHONUNBUFFERED=1
+    export DRAGON_LOG_DEVICE_STDERR=DEBUG
 
     # dragonhpc does not declare numpy as a base dependency, but dragon.utils
     # imports it at load time — install it explicitly.
