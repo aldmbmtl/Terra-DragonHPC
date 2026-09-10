@@ -45,7 +45,12 @@ data:
         python3 -m pip install -r "${DRAGON_REQUIREMENTS}"
     fi
 
-    exec dragon -l DEBUG "${DRAGON_ENTRYPOINT}"
+    # -l DEBUG: exported DRAGON_LOG_DEVICE_STDERR is clobbered by argparse
+    # defaults (log_device_level_map → setup_FE_logging) — pass it explicitly.
+    # -t tcp forces the TCP transport agent for local services too — the
+    # default HSTA (RDMA-style) agent has a ~1s C++ fabric init that loses the
+    # LS bring-up race (local_svc.py:497 "ls did not receive ping from TA").
+    exec dragon -l DEBUG -t tcp "${DRAGON_ENTRYPOINT}"
 
   backend.sh: |
     #!/bin/bash
