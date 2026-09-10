@@ -28,7 +28,7 @@ Backend pods run `backend.sh`: pip-install `dragonhpc`, then `exec dragon-backen
 
 | Name | Description |
 |---|---|
-| `DRAGON_ENTRYPOINT` | Python module/script to launch with dragon (required) |
+| `DRAGON_ENTRYPOINT` | Python module/script to launch with dragon (required). Trailing args after the script path are forwarded to the child (word-split) |
 | `DRAGON_WORKING_DIR` | Working directory for the launch script (default `/workspace`) |
 | `DRAGON_GIT_URL` | Optional git repo to clone into the working dir |
 | `DRAGON_REQUIREMENTS` | Path to requirements.txt to install before run |

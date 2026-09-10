@@ -16,8 +16,7 @@ data:
     # Dragon's native loggers default to NONE — the failing TA/LS child dies
     # silently; route launcher+native logs to stderr.
     export PYTHONUNBUFFERED=1
-    export DRAGON_LOG_DEVICE_STDERR=DEBUG
-
+    export DRAGON_LOG_DEVICE_STDERR=INFO
     # Entrypoint is required — fail if not set
     if [ -z "${DRAGON_ENTRYPOINT}" ]; then
         echo "ERROR: DRAGON_ENTRYPOINT environment variable is required but not set."
@@ -45,12 +44,15 @@ data:
         python3 -m pip install -r "${DRAGON_REQUIREMENTS}"
     fi
 
-    # -l DEBUG: exported DRAGON_LOG_DEVICE_STDERR is clobbered by argparse
+    # -l INFO: exported DRAGON_LOG_DEVICE_STDERR is clobbered by argparse
     # defaults (log_device_level_map → setup_FE_logging) — pass it explicitly.
     # -t tcp forces the TCP transport agent for local services too — the
     # default HSTA (RDMA-style) agent has a ~1s C++ fabric init that loses the
     # LS bring-up race (local_svc.py:497 "ls did not receive ping from TA").
-    exec dragon -l DEBUG -t tcp "${DRAGON_ENTRYPOINT}"
+    # DRAGON_ENTRYPOINT may be "script.py arg1 arg2" — word-split so trailing
+    # args reach the child sys.argv (dragon forwards positionals mpirun-style).
+    read -r -a ENTRY_ARGS <<< "${DRAGON_ENTRYPOINT}"
+    exec dragon -l INFO -t tcp "${ENTRY_ARGS[@]}"
 
   backend.sh: |
     #!/bin/bash
@@ -63,7 +65,7 @@ data:
     # Dragon's native loggers default to NONE — the failing TA/LS child dies
     # silently; route launcher+native logs to stderr.
     export PYTHONUNBUFFERED=1
-    export DRAGON_LOG_DEVICE_STDERR=DEBUG
+    export DRAGON_LOG_DEVICE_STDERR=INFO
 
     # dragonhpc does not declare numpy as a base dependency, but dragon.utils
     # imports it at load time — install it explicitly.

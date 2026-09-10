@@ -70,4 +70,4 @@ data:
     - name: DRAGON_REQUIREMENTS
       description: "Path to requirements.txt to install before run"
     - name: DRAGON_ENTRYPOINT
-      description: "Python module/script to launch with dragon"
+      description: "Python module/script to launch with dragon (required). Trailing args after the script path are forwarded to the child (word-split)."
