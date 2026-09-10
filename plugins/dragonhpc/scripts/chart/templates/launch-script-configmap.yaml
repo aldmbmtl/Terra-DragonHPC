@@ -36,17 +36,16 @@ data:
 
     # dragonhpc does not declare numpy as a base dependency, but dragon.utils
     # imports it at load time — install it explicitly.
-    python3 -m pip install numpy
     # The Dragon K8s launcher requires the kubernetes client library,
     # which dragonhpc ships only as an optional extra — install it explicitly.
-    python3 -m pip install kubernetes
+    python3 -m pip install numpy kubernetes
 
     if [ -n "${DRAGON_REQUIREMENTS}" ]; then
         echo "Installing requirements from ${DRAGON_REQUIREMENTS}"
         python3 -m pip install -r "${DRAGON_REQUIREMENTS}"
     fi
 
-    exec dragon "${DRAGON_ENTRYPOINT}"
+    exec dragon -l DEBUG "${DRAGON_ENTRYPOINT}"
 
   backend.sh: |
     #!/bin/bash
@@ -63,9 +62,7 @@ data:
 
     # dragonhpc does not declare numpy as a base dependency, but dragon.utils
     # imports it at load time — install it explicitly.
-    python3 -m pip install numpy
     # The Dragon K8s launcher requires the kubernetes client library,
     # which dragonhpc ships only as an optional extra — install it explicitly.
-    python3 -m pip install kubernetes
-    python3 -m pip install dragonhpc
+    python3 -m pip install numpy kubernetes dragonhpc
     exec dragon-backend
