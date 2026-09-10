@@ -94,6 +94,20 @@ data:
                 - name: {{ "{{DRAGON_FE_GW}}" | quote }}
                   value: {{ "{{temp_fe_gw}}" | quote }}
               command: ["/bin/bash", "/tmp/launch_script/backend.sh"]
+              startupProbe:
+                tcpSocket:
+                  port: 7575
+                initialDelaySeconds: 30
+                periodSeconds: 10
+                timeoutSeconds: 5
+                failureThreshold: 21
+              readinessProbe:
+                tcpSocket:
+                  port: 8081
+                initialDelaySeconds: 10
+                periodSeconds: 5
+                timeoutSeconds: 5
+                failureThreshold: 3
               volumeMounts:
                 - name: shm
                   mountPath: /dev/shm
