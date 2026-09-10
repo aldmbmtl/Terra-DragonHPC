@@ -12,6 +12,7 @@ data:
       name: {{ .Release.Name }}-backend
       labels:
         app: {{ .Release.Name }}-backend
+        kuiper.juno-innovations.com/kuiper-instance: {{ .Release.Name }}
       ownerReferences:
       - apiVersion: batch/v1
         controller: true
@@ -29,6 +30,7 @@ data:
             app: {{ .Release.Name }}-backend
           annotations:
             juno-innovations.com/workload: "Terminal"
+            kuiper.juno-innovations.com/kuiper-instance: {{ .Release.Name }}
         spec:
           restartPolicy: Never
           serviceAccountName: {{ .Release.Name }}-backend

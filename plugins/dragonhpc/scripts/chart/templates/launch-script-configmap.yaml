@@ -25,6 +25,10 @@ data:
         git clone "${DRAGON_GIT_URL}" .
     fi
 
+    # dragonhpc does not declare numpy as a base dependency, but dragon.utils
+    # imports it at load time — install it explicitly.
+    python3 -m pip install numpy
+
     if [ -n "${DRAGON_REQUIREMENTS}" ]; then
         echo "Installing requirements from ${DRAGON_REQUIREMENTS}"
         python3 -m pip install -r "${DRAGON_REQUIREMENTS}"
@@ -36,5 +40,8 @@ data:
     #!/bin/bash
     set -e
 
+    # dragonhpc does not declare numpy as a base dependency, but dragon.utils
+    # imports it at load time — install it explicitly.
+    python3 -m pip install numpy
     python3 -m pip install dragonhpc
     exec dragon-backend
