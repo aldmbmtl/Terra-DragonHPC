@@ -1,0 +1,4 @@
+apiVersion: v1
+name: dragonhpc
+version: 0.0.0
+icon: https://raw.githubusercontent.com/DragonHPC/dragon-cloud/main/Color-logo-no-background.png
