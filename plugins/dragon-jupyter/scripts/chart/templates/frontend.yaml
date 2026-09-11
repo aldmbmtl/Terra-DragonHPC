@@ -1,0 +1,129 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-frontend
+  annotations:
+    juno-innovations.com/workload: "Application"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-frontend
+  serviceName: {{ .Release.Name }}-frontend
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-frontend
+      annotations:
+        juno-innovations.com/workload: "Application"
+    spec:
+      restartPolicy: Always
+      {{- if .Values.pullSecret }}
+      imagePullSecrets:
+        - name: "{{ .Values.pullSecret }}"
+      {{- end }}
+      serviceAccountName: {{ .Release.Name }}-frontend
+      containers:
+        - name: frontend
+          securityContext:
+            runAsUser: 0
+          image: "{{ .Values.registry }}/{{ .Values.repo }}:{{ .Values.tag }}"
+          resources:
+            requests:
+              memory: "{{ .Values.memory }}"
+              cpu: "{{ .Values.cpu }}"
+            {{- if or .Values.memoryLimit .Values.cpuLimit }}
+            limits:
+            {{- if .Values.cpuLimit }}
+              cpu: "{{ .Values.cpuLimit }}"
+            {{- end }}
+            {{- if .Values.memoryLimit }}
+              memory: "{{ .Values.memoryLimit }}"
+            {{- end }}
+            {{- end }}
+          env:
+            - name: USER
+              value: "{{ .Values.user }}"
+            - name: HOME
+              value: "/home/{{ .Values.user }}"
+            - name: UID
+              value: "{{ .Values.puid }}"
+            - name: GID
+              value: "{{ .Values.guid }}"
+            - name: FRONTEND_PORT
+              value: "8888"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            - name: FRONTEND_STS_LABEL
+              value: {{ .Release.Name }}-frontend
+            {{- range .Values.env }}
+            - name: {{ .name | quote }}
+              value: {{ .value | quote }}
+            {{- end }}
+          ports:
+            - containerPort: 8888
+              name: http
+          command: ["/bin/bash", "/tmp/launch_script/launch.sh"]
+          startupProbe:
+            httpGet:
+              path: /api
+              port: 8888
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /api
+              port: 8888
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /api
+              port: 8888
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: shm
+              mountPath: /dev/shm
+            - name: launch-script-config
+              mountPath: /tmp/launch_script
+            - name: backend-deployment
+              mountPath: /config
+            {{- if .Values.volumeMounts }}
+            {{- toYaml .Values.volumeMounts | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: {{ .Values.shm_size }}
+        - name: launch-script-config
+          configMap:
+            name: {{ .Release.Name }}-launch-script
+            defaultMode: 0755
+        - name: backend-deployment
+          configMap:
+            name: {{ .Release.Name }}-backend
+        {{- if .Values.volumes }}
+        {{- toYaml .Values.volumes | nindent 8 }}
+        {{- end }}

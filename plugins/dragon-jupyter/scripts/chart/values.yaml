@@ -1,0 +1,30 @@
+# Kuiper-injected standard values — do not remove
+name: my-template
+user:
+group:
+cpu: "1"
+memory: "1Gi"
+cpuLimit: null
+memoryLimit: null
+idx: 0
+guid: 0
+puid: 0
+host:
+pullSecret:
+session:
+volumeMounts: []
+volumes: []
+env:
+  - name: JUNO
+    value: "true"
+selector:
+plugins: []
+_kuiper:
+
+# DragonHPC defaults — names MUST match metadata.yaml field names
+registry: quay.io
+repo: jupyter/datascience-notebook
+tag: lab-4.4.9
+nnodes: 1
+gpu: false
+shm_size: 10Gi

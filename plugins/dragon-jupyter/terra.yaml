@@ -1,0 +1,9 @@
+resource_id: dragon-jupyter
+name: dragon-jupyter
+icon: https://raw.githubusercontent.com/DragonHPC/dragon-cloud/main/Color-logo-no-background.png
+description: DragonHPC Jupyter Notebook workload template
+category: HPC
+tags:
+  - cluster-level
+  - workload
+fields: []

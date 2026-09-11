@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-launch-script
+  labels:
+    app: {{ .Release.Name }}-dragon
+data:
+  launch.sh: |
+    #!/bin/bash
+    set -e
+
+    # Dragon's native TCP transport agent probes NUMA/verbs/PCI devices at
+    # startup and dies without them (upstream deploy/kubernetes/Dockerfile parity).
+    apt-get update && apt-get install -y --no-install-recommends libnuma1 libibverbs1 librdmacm1 pciutils && rm -rf /var/lib/apt/lists/*
+
+    # Dragon's native loggers default to NONE — the failing TA/LS child dies
+    # silently; route launcher+native logs to stderr.
+    export PYTHONUNBUFFERED=1
+    export DRAGON_LOG_DEVICE_STDERR=INFO
+
+    # dragonhpc does not declare numpy as a base dependency, but dragon.utils
+    # imports it at load time — install it explicitly.
+    # The Dragon K8s launcher requires the kubernetes client library,
+    # which dragonhpc ships only as an optional extra — install it explicitly.
+    # dragonhpc provides the dragon-jupyter command (official Jupyter images do not ship it).
+    python3 -m pip install numpy kubernetes dragonhpc
+
+    # dragon-jupyter starts a Jupyter Notebook server inside the Dragon
+    # frontend, backed by the Dragon distributed runtime.
+    exec dragon-jupyter
+
+  backend.sh: |
+    #!/bin/bash
+    set -e
+
+    # Dragon's native TCP transport agent probes NUMA/verbs/PCI devices at
+    # startup and dies without them (upstream deploy/kubernetes/Dockerfile parity).
+    apt-get update && apt-get install -y --no-install-recommends libnuma1 libibverbs1 librdmacm1 pciutils && rm -rf /var/lib/apt/lists/*
+
+    # Dragon's native loggers default to NONE — the failing TA/LS child dies
+    # silently; route launcher+native logs to stderr.
+    export PYTHONUNBUFFERED=1
+    export DRAGON_LOG_DEVICE_STDERR=INFO
+
+    # dragonhpc does not declare numpy as a base dependency, but dragon.utils
+    # imports it at load time — install it explicitly.
+    # The Dragon K8s launcher requires the kubernetes client library,
+    # which dragonhpc ships only as an optional extra — install it explicitly.
+    python3 -m pip install numpy kubernetes dragonhpc
+    exec dragon-backend
